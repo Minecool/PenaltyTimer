@@ -1,4 +1,4 @@
-name: Build Rust Desktop App
+name: Build Penalty Timer
 
 on:
   workflow_dispatch
@@ -23,3 +23,12 @@ jobs:
 
     - name: Build release
       run: cargo build --release
+      
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: PenaltyTimer-${{ matrix.os }}
+        path: |
+          target/release/PenaltyTimer
+          target/release/PenaltyTimer.exe
+        if-no-files-found: error
