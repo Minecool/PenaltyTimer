@@ -15,11 +15,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: PenaltyTimer-Linux
+            artifact_name: PenaltyTimer
             binary: target/release/PenaltyTimer
+            extension: ""
           - os: windows-latest
-            artifact_name: PenaltyTimer.exe
+            artifact_name: PenaltyTimer
             binary: target/release/PenaltyTimer.exe
+            extension: ".exe"
 
     steps:
       - name: Checkout repository
@@ -30,7 +32,9 @@ jobs:
         shell: bash
         run: |
           version=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          dashed_version="${version//./-}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dashed_version=$dashed_version" >> "$GITHUB_OUTPUT"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -44,13 +48,13 @@ jobs:
       - name: Rename binary
         shell: bash
         run: |
-          mv "${{ matrix.binary }}" "${{ matrix.artifact_name }}-${{ steps.version.outputs.version }}"
+          mv "${{ matrix.binary }}" "${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}"
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}-${{ steps.version.outputs.version }}
+          name: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}
+          path: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}
 
   release:
     name: Create GitHub Release
@@ -66,18 +70,20 @@ jobs:
         shell: bash
         run: |
           version=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          dashed_version="${version//./-}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dashed_version=$dashed_version" >> "$GITHUB_OUTPUT"
 
       - name: Download Linux build
         uses: actions/download-artifact@v4
         with:
-          name: PenaltyTimer-Linux
+          name: PenaltyTimer-${{ steps.version.outputs.dashed_version }}
           path: release
 
       - name: Download Windows build
         uses: actions/download-artifact@v4
         with:
-          name: PenaltyTimer.exe
+          name: PenaltyTimer-${{ steps.version.outputs.dashed_version }}.exe
           path: release
 
       - name: Create GitHub Release
@@ -86,5 +92,5 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: ${{ steps.version.outputs.version }} Release Builds
           files: |
-            release/PenaltyTimer-Linux-${{ steps.version.outputs.version }}
-            release/PenaltyTimer.exe-${{ steps.version.outputs.version }}
+            release/PenaltyTimer-${{ steps.version.outputs.dashed_version }}-Linux
+            release/PenaltyTimer-${{ steps.version.outputs.dashed_version }}.exe
