@@ -127,12 +127,12 @@ fn get_process_pid_and_handle() -> Result<(Pid, ProcessHandle)> {
 unsafe fn get_penalty_start_frame(handle: ProcessHandle, game_assembly: usize) -> Option<i32> {
     let mut penalty_start_frame = DataMember::<i32>::new(handle);
     penalty_start_frame.set_offset(vec![
-        game_assembly + 0x4949E50,
+        game_assembly + 0x4A63578,
         0xB8,
         0x0,
-        0xD0,
+        0xC0,
         0x28,
-        0x278,
+        0x288,
         0x98,
         0xB0,
         0x44
@@ -143,10 +143,10 @@ unsafe fn get_penalty_start_frame(handle: ProcessHandle, game_assembly: usize) -
 unsafe fn get_round_time(handle: ProcessHandle, game_assembly: usize) -> Option<i32> {
     let mut round_time = DataMember::<i32>::new(handle);
     round_time.set_offset(vec![
-        game_assembly + 0x4949E50,
+        game_assembly + 0x4A63578,
         0xB8,
         0x0,
-        0xD0,
+        0xC0,
         0x28,
         0x30,
         0x10
