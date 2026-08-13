@@ -1,6 +1,6 @@
 [package]
 name = "PenaltyTimer"
-version = "56.1"
+version = "56.1.0"
 edition = "2024"
 
 [dependencies]
