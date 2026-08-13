@@ -1,34 +1,90 @@
 name: Build Penalty Timer
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: PenaltyTimer-Linux
+            binary: target/release/PenaltyTimer
+          - os: windows-latest
+            artifact_name: PenaltyTimer.exe
+            binary: target/release/PenaltyTimer.exe
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          version=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build release
-      run: cargo build --release
-      
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: PenaltyTimer-${{ matrix.os }}
-        path: |
-          target/release/PenaltyTimer
-          target/release/PenaltyTimer.exe
-        if-no-files-found: error
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          mv "${{ matrix.binary }}" "${{ matrix.artifact_name }}-${{ steps.version.outputs.version }}"
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}-${{ steps.version.outputs.version }}
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          version=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: PenaltyTimer-Linux
+          path: release
+
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: PenaltyTimer.exe
+          path: release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }} Release Builds
+          files: |
+            release/PenaltyTimer-Linux-${{ steps.version.outputs.version }}
+            release/PenaltyTimer.exe-${{ steps.version.outputs.version }}
