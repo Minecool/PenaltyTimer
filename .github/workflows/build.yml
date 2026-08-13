@@ -17,10 +17,12 @@ jobs:
           - os: ubuntu-latest
             artifact_name: PenaltyTimer
             binary: target/release/PenaltyTimer
+            suffix: -Linux
             extension: ""
           - os: windows-latest
             artifact_name: PenaltyTimer
             binary: target/release/PenaltyTimer.exe
+            suffix: ""
             extension: ".exe"
 
     steps:
@@ -48,13 +50,13 @@ jobs:
       - name: Rename binary
         shell: bash
         run: |
-          mv "${{ matrix.binary }}" "${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}"
+          mv "${{ matrix.binary }}" "${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.suffix }}${{ matrix.extension }}"
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}
-          path: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.extension }}
+          name: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.suffix }}${{ matrix.extension }}
+          path: ${{ matrix.artifact_name }}-${{ steps.version.outputs.dashed_version }}${{ matrix.suffix }}${{ matrix.extension }}
 
   release:
     name: Create GitHub Release
@@ -77,7 +79,7 @@ jobs:
       - name: Download Linux build
         uses: actions/download-artifact@v4
         with:
-          name: PenaltyTimer-${{ steps.version.outputs.dashed_version }}
+          name: PenaltyTimer-${{ steps.version.outputs.dashed_version }}-Linux
           path: release
 
       - name: Download Windows build
